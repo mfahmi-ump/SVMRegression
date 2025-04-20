@@ -1029,7 +1029,8 @@ const I1Chart = new Chart(ctxInf1, {
       {
         label: 'Predicted Data',
         data: tpred.map((t, i) => ({ x: t, y: I1data_pred[i] })),
-        type: 'scatter',
+        type: 'line',
+        showLine: false,
         backgroundColor: '#FF4500',
         borderColor: '#FF4500',
         pointStyle: 'rect',
@@ -1088,12 +1089,9 @@ const I1Chart = new Chart(ctxInf1, {
             },
             maxRotation: 0,
             minRotation: 0
-          
-          
         },
         min: tdays[tdays.length - 50],
         max: tpred[tpred.length - 1]
-        
       },
       y: {
         title: {
@@ -1138,7 +1136,8 @@ const I2Chart = new Chart(ctxInf2, {
       {
         label: 'Predicted Data',
         data: tpred.map((t, i) => ({ x: t, y: I2data_pred[i] })),
-        type: 'scatter',
+        type: 'line',
+        showLine: false,
         backgroundColor: '#008080',
         borderColor: '#008080',
         pointStyle: 'rect',
@@ -1249,7 +1248,8 @@ const I3Chart = new Chart(ctxInf3, {
       {
         label: 'Predicted Data',
         data: tpred.map((t, i) => ({ x: t, y: I3data_pred[i] })),
-        type: 'scatter',
+        type: 'line',
+        showLine: false,
         backgroundColor: '#00BFFF',
         borderColor: '#00BFFF',
         pointStyle: 'rect',
@@ -1360,7 +1360,8 @@ const SChart = new Chart(ctxS, {
       {
         label: 'Predicted Data',
         data: tpred.map((t, i) => ({ x: t, y: Sdata_pred[i] })),
-        type: 'scatter',
+        type: 'line',
+        showLine: false,
         backgroundColor: '#00FFFF',
         borderColor: '#00FFFF',
         pointStyle: 'rect',
@@ -1468,7 +1469,8 @@ const RChart = new Chart(ctxR, {
       {
         label: 'Predicted Data',
         data: tpred.map((t, i) => ({ x: t, y: Rdata_pred[i] })),
-        type: 'scatter',
+        type: 'line',
+        showLine: false,
         backgroundColor: '#FF00FF',
         borderColor: '#FF00FF',
         pointStyle: 'rect',
