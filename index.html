@@ -1,0 +1,2862 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <title>Support Vector Machine Regression</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background-color: #ecf0f1;
+    }
+
+    .dashboard-container {
+      padding: 20px 150px; 
+    }
+
+    canvas {
+      border-radius: 8px;
+      background: white;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      display: block;
+    }
+
+    .info-card {
+      border-radius: 8px;
+      background: white;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      font-size: 0.85rem;
+      text-align: justify;
+      line-height: 0.6;
+    }
+    .stat {
+      margin: 0px 0;
+    }
+    .label {
+      font-weight: bold;
+      display: inline-block;
+      min-width: 100px;
+    }
+
+    @media (max-width: 768px) {
+      .dashboard-container {
+        padding: 20px;
+      }
+    }
+  </style>
+   
+</head>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation"></script>
+
+  <script>
+    function renderStats(stats, elementId) {
+      const labels = [
+        "Mean", "Std", "Min", "Max", "Range",
+        "Diff Mean", "Autocorr₁", "Trend Slope"
+      ];
+    
+      const container = document.getElementById(elementId);
+      if (container && stats?.length === labels.length) {
+        container.innerHTML = stats.map((val, i) => {
+          const formatted = Math.abs(val) < 0.001
+            ? val.toExponential(2)
+            : val.toFixed(3);
+          return `<p class="stat-entry"><span class="label">${labels[i]}:</span> ${formatted}</p>`;
+        }).join('');
+      } else {
+        container.innerHTML = "<p>Stats unavailable.</p>";
+        console.error(`Stats render failed for #${elementId}`);
+      }
+    }
+        // Fetch the JSON file and display it on the page
+        fetch('SVR_output_data.json')
+        .then(response => response.json())
+        .then(data => {
+            // Extract tdays and beta_1
+            const tdays = data["tdays"];
+            const tpred = data["tpred"];
+            const beta_1 = data["beta_1"];
+            const beta_2 = data["beta_2"];
+            const beta_3 = data["beta_3"];
+            const p_1 = data["p_1"];
+            const p_2 = data["p_2"];
+            const p_3 = data["p_3"];
+            const r_1 = data["r_1"];
+            const r_2 = data["r_2"];
+            const r_3 = data["r_3"];
+            const d_1 = data["d_1"];
+            const d_2 = data["d_2"];
+            const d_3 = data["d_3"];
+            const beta_1_fut = data["beta_1_f"];
+            const beta_2_fut = data["beta_2_f"];
+            const beta_3_fut = data["beta_3_f"];
+            const r_1_fut = data["r_1_f"];
+            const r_2_fut = data["r_2_f"];
+            const r_3_fut = data["r_3_f"];
+            const d_1_fut = data["d_1_f"];
+            const d_2_fut = data["d_2_f"];
+            const d_3_fut = data["d_3_f"];
+            const p_1_fut = data["p_1_f"];
+            const p_2_fut = data["p_2_f"];
+            const p_3_fut = data["p_3_f"];
+            const I1data = data["I1data"];
+            const I1model_50 = data["I1model_50"];
+            const I1data_pred = data["I1data_pred"];
+            const I1pred_50 = data["I1pred_50"];
+            const I1pred_75 = data["I1pred_75"];
+            const I1pred_25 = data["I1pred_25"];
+            const Sdata = data["Sdata"];
+            const Smodel_50 = data["Smodel_50"];
+            const Sdata_pred = data["Sdata_pred"];
+            const Spred_50 = data["Spred_50"];
+            const Spred_75 = data["Spred_75"];
+            const Spred_25 = data["Spred_25"];
+            const I2data = data["I2data"];
+            const I2model_50 = data["I2model_50"];
+            const I2data_pred = data["I2data_pred"];
+            const I2pred_50 = data["I2pred_50"];
+            const I2pred_75 = data["I2pred_75"];
+            const I2pred_25 = data["I2pred_25"];
+            const Rdata = data["Rdata"];
+            const Rmodel_50 = data["Rmodel_50"];
+            const Rdata_pred = data["Rdata_pred"];
+            const Rpred_50 = data["Rpred_50"];
+            const Rpred_75 = data["Rpred_75"];
+            const Rpred_25 = data["Rpred_25"];
+            const I3data = data["I3data"];
+            const I3model_50 = data["I3model_50"];
+            const I3data_pred = data["I3data_pred"];
+            const I3pred_50 = data["I3pred_50"];
+            const I3pred_75 = data["I3pred_75"];
+            const I3pred_25 = data["I3pred_25"];
+            const Ddata = data["Ddata"];
+            const Dmodel_50 = data["Dmodel_50"];
+            const Ddata_pred = data["Ddata_pred"];
+            const Dpred_50 = data["Dpred_50"];
+            const Dpred_75 = data["Dpred_75"];
+            const Dpred_25 = data["Dpred_25"];
+            const stats_beta_1 = data["stats_beta_1"];
+            const stats_beta_2 = data["stats_beta_2"];
+            const stats_beta_3 = data["stats_beta_3"];
+            const box_beta_1 = data["box_beta_1"];
+            const box_beta_2 = data["box_beta_2"];
+            const box_beta_3 = data["box_beta_3"];
+            const box_r_1 = data["box_r_1"];
+            const box_r_2 = data["box_r_2"];
+            const box_r_3 = data["box_r_3"];
+            const box_d_1 = data["box_d_1"];
+            const box_d_2 = data["box_d_2"];
+            const box_d_3 = data["box_d_3"];
+            const box_p_1 = data["box_p_1"];
+            const box_p_2 = data["box_p_2"];
+            const box_p_3 = data["box_p_3"];
+            
+            const stats_p_1 = data["stats_p_1"];
+            const stats_p_2 = data["stats_p_2"];
+            const stats_p_3 = data["stats_p_3"];
+            const stats_r_1 = data["stats_r_1"];
+            const stats_r_2 = data["stats_r_2"];
+            const stats_r_3 = data["stats_r_3"];
+            const stats_d_1 = data["stats_d_1"];
+            const stats_d_2 = data["stats_d_2"];
+            const stats_d_3 = data["stats_d_3"];
+            
+            renderStats(data["stats_beta_1"], "beta1-stats");
+            renderStats(data["stats_beta_2"], "beta2-stats");
+            renderStats(data["stats_beta_3"], "beta3-stats");
+            renderStats(data["stats_r_1"], "r1-stats");
+            renderStats(data["stats_r_2"], "r2-stats");
+            renderStats(data["stats_r_3"], "r3-stats");
+            renderStats(data["stats_d_1"], "d1-stats");
+            renderStats(data["stats_d_2"], "d2-stats");
+            renderStats(data["stats_d_3"], "d3-stats");
+            renderStats(data["stats_p_1"], "p1-stats");
+            renderStats(data["stats_p_2"], "p2-stats");
+            renderStats(data["stats_p_3"], "p3-stats");
+
+            const timeFull = tdays.concat(tpred);
+            const tpredFirst = tpred[0]; 
+            
+        const ctx = document.getElementById('beta_1_chart').getContext('2d');
+        const beta1Chart = new Chart(ctx, {
+          type: 'line',
+      data: {
+        labels: timeFull,
+        datasets: [
+          {
+            label: 'Estimated Beta_1',
+            data: beta_1,
+            borderColor: '#191970',
+            backgroundColor: 'rgba(25, 25, 112, 0.2)',
+            borderWidth: 2,
+            fill: true,
+            pointRadius: 0,
+            tension: 0.1
+          },
+          {
+            label: 'SVM Regression',
+            data: beta_1_fut,
+            borderColor: '#191970',
+            borderWidth: 1.5,
+            borderDash: [6, 4], 
+            fill: false,
+            pointRadius: 0, 
+            tension: 0.1
+          }
+        ]
+      },
+      options: {
+        scales: {
+          y: {
+            title: {
+              display: true,
+              text: 'beta_1 (β1)'
+            },
+            //min: Math.min(...beta_1_fut) - (Math.max(0.1 * (Math.max(...beta_1_fut) - Math.min(...beta_1_fut)), 1e-6)),
+            //max: Math.max(...beta_1_fut) + (Math.max(0.1 * (Math.max(...beta_1_fut) - Math.min(...beta_1_fut)), 1e-6)),
+          },
+          x: {
+            title: {
+              display: true,
+              text: 't(days)'
+            },
+            ticks: {
+              callback: function(value, index) {
+                return index % 4 === 0 ? this.getLabelForValue(value) : '';
+              },
+              maxRotation: 0,
+              minRotation: 0
+            }
+          }
+        },
+        plugins: {
+          legend: {
+            display: true,
+          },
+          annotation: {
+            annotations: {
+              verticalLine: {
+                type: 'line',
+                xMin: tpredFirst, 
+                xMax: tpredFirst,  
+                borderColor: 'black',
+                borderWidth: 1,
+                borderDash: [6, 4],
+              }
+            }
+          }
+        }
+      }
+    });
+
+    //newchart
+    const ctx2 = document.getElementById('beta_2_chart').getContext('2d');
+const beta2Chart = new Chart(ctx2, {
+  type: 'line',
+  data: {
+    labels: timeFull,
+    datasets: [
+      {
+        label: 'Estimated Beta_2',
+        data: beta_2,
+        borderColor: '#4682B4',
+        backgroundColor: 'rgba(30, 144, 255, 0.2)',
+        borderWidth: 2,
+        fill: true,
+        pointRadius: 0,
+        tension: 0.1
+      },
+      {
+        label: 'SVM Regression',
+        data: beta_2_fut,
+        borderColor: '#4682B4',
+        borderWidth: 1.5,
+        borderDash: [6, 4],
+        fill: false,
+        pointRadius: 0,
+        tension: 0.1
+      }
+    ]
+  },
+  options: {
+    scales: {
+      y: {
+        title: {
+          display: true,
+          text: 'beta_2 (β₂)',
+        },
+        min: Math.min(...beta_2_fut) - (Math.max(0.15 * (Math.max(...beta_2_fut) - Math.min(...beta_2_fut)), 1e-6)),
+        max: Math.max(...beta_2_fut) + (Math.max(0.15 * (Math.max(...beta_2_fut) - Math.min(...beta_2_fut)), 1e-6)),
+      },
+      x: {
+        title: {
+          display: true,
+          text: 't(days)'
+        },
+        ticks: {
+          callback: function(value, index) {
+            return index % 4 === 0 ? this.getLabelForValue(value) : '';
+          },
+          maxRotation: 0,
+          minRotation: 0
+        }
+      }
+    },
+    plugins: {
+      legend: {
+        display: true
+      },
+      annotation: {
+        annotations: {
+          verticalLine: {
+            type: 'line',
+            xMin: tpredFirst,
+            xMax: tpredFirst,
+            borderColor: 'black',
+            borderWidth: 1,
+            borderDash: [6, 4]
+          }
+        }
+      }
+    }
+  }
+});
+
+    //newchart
+    const ctx3 = document.getElementById('beta_3_chart').getContext('2d');
+const beta3Chart = new Chart(ctx3, {
+  type: 'line',
+  data: {
+    labels: timeFull,
+    datasets: [
+      {
+        label: 'Estimated Beta_3',
+        data: beta_3,
+        borderColor: '#4169E1',
+        backgroundColor: 'rgba(65, 105, 225, 0.2)',
+        borderWidth: 2,
+        fill: true,
+        pointRadius: 0,
+        tension: 0.1
+      },
+      {
+        label: 'SVM Regression',
+        data: beta_3_fut,
+        borderColor: '#4169E1',
+        borderWidth: 1.5,
+        borderDash: [6, 4],
+        fill: false,
+        pointRadius: 0,
+        tension: 0.1
+      }
+    ]
+  },
+  options: {
+    scales: {
+      y: {
+        title: {
+          display: true,
+          text: 'beta_3 (β₃)',
+        },
+        min: Math.min(...beta_3_fut) - (Math.max(0.15 * (Math.max(...beta_3_fut) - Math.min(...beta_3_fut)), 1e-6)),
+        max: Math.max(...beta_3_fut) + (Math.max(0.15 * (Math.max(...beta_3_fut) - Math.min(...beta_3_fut)), 1e-6)),
+      },
+      x: {
+        title: {
+          display: true,
+          text: 't(days)'
+        },
+        ticks: {
+          callback: function(value, index) {
+            return index % 4 === 0 ? this.getLabelForValue(value) : '';
+          },
+          maxRotation: 0,
+          minRotation: 0
+        }
+      }
+    },
+    plugins: {
+      legend: {
+        display: true
+      },
+      annotation: {
+        annotations: {
+          verticalLine: {
+            type: 'line',
+            xMin: tpredFirst,
+            xMax: tpredFirst,
+            borderColor: 'black',
+            borderWidth: 1,
+            borderDash: [6, 4]
+          }
+        }
+      }
+    }
+  }
+});
+// p_1 chart
+const ctxP1 = document.getElementById('p_1_chart').getContext('2d');
+const p1Chart = new Chart(ctxP1, {
+  type: 'line',
+  data: {
+    labels: timeFull,
+    datasets: [
+      {
+        label: 'Estimated p_1',
+        data: p_1,
+        borderColor: '#DA70D6',
+        backgroundColor: 'rgba(218, 112, 214, 0.2)',
+        borderWidth: 2,
+        fill: true,
+        pointRadius: 0,
+        tension: 0.1
+      },
+      {
+        label: 'SVM Regression',
+        data: p_1_fut,
+        borderColor: '#BA55D3',
+        borderWidth: 1.5,
+        borderDash: [6, 4],
+        fill: false,
+        pointRadius: 0,
+        tension: 0.1
+      }
+    ]
+  },
+  options: {
+    scales: {
+      y: {
+        title: { display: true, text: 'p_1' },
+        min: Math.min(...p_1_fut) - (Math.max(0.15 * (Math.max(...p_1_fut) - Math.min(...p_1_fut)), 1e-6)),
+        max: Math.max(...p_1_fut) + (Math.max(0.15 * (Math.max(...p_1_fut) - Math.min(...p_1_fut)), 1e-6)),
+      },
+      x: {
+        title: { display: true, text: 't(days)' },
+        ticks: {
+          callback: function(value, index) {
+            return index % 4 === 0 ? this.getLabelForValue(value) : '';
+          },
+          maxRotation: 0,
+          minRotation: 0
+        }
+      }
+    },
+    plugins: {
+      legend: { display: true },
+      annotation: {
+        annotations: {
+          verticalLine: {
+            type: 'line',
+            xMin: tpredFirst,
+            xMax: tpredFirst,
+            borderColor: 'black',
+            borderWidth: 1,
+            borderDash: [6, 4]
+          }
+        }
+      }
+    }
+  }
+});
+
+// p_2 chart
+const ctxP2 = document.getElementById('p_2_chart').getContext('2d');
+const p2Chart = new Chart(ctxP2, {
+  type: 'line',
+  data: {
+    labels: timeFull,
+    datasets: [
+      {
+        label: 'Estimated p_2',
+        data: p_2,
+        borderColor: '#9400D3',
+        backgroundColor: 'rgba(148, 0, 211, 0.2)',
+        borderWidth: 2,
+        fill: true,
+        pointRadius: 0,
+        tension: 0.1
+      },
+      {
+        label: 'SVM Regression',
+        data: p_2_fut,
+        borderColor: '#9400D3',
+        borderWidth: 1.5,
+        borderDash: [6, 4],
+        fill: false,
+        pointRadius: 0,
+        tension: 0.1
+      }
+    ]
+  },
+  options: {
+    scales: {
+      y: {
+        title: { display: true, text: 'p_2' },
+        min: Math.min(...p_2_fut) - (Math.max(0.15 * (Math.max(...p_2_fut) - Math.min(...p_2_fut)), 1e-6)),
+        max: Math.max(...p_2_fut) + (Math.max(0.15 * (Math.max(...p_2_fut) - Math.min(...p_2_fut)), 1e-6)),
+      },
+      x: {
+        title: { display: true, text: 't(days)' },
+        ticks: {
+          callback: function(value, index) {
+            return index % 4 === 0 ? this.getLabelForValue(value) : '';
+          },
+          maxRotation: 0,
+          minRotation: 0
+        }
+      }
+    },
+    plugins: {
+      legend: { display: true },
+      annotation: {
+        annotations: {
+          verticalLine: {
+            type: 'line',
+            xMin: tpredFirst,
+            xMax: tpredFirst,
+            borderColor: 'black',
+            borderWidth: 1,
+            borderDash: [6, 4]
+          }
+        }
+      }
+    }
+  }
+});
+
+// p_3 chart
+const ctxP3 = document.getElementById('p_3_chart').getContext('2d');
+const p3Chart = new Chart(ctxP3, {
+  type: 'line',
+  data: {
+    labels: timeFull,
+    datasets: [
+      {
+        label: 'Estimated p_3',
+        data: p_3,
+        borderColor: '#FF00FF',
+        backgroundColor: 'rgba(255, 0, 255, 0.2)',
+        borderWidth: 2,
+        fill: true,
+        pointRadius: 0,
+        tension: 0.1
+      },
+      {
+        label: 'SVM Regression',
+        data: p_3_fut,
+        borderColor: '#FF00FF',
+        borderWidth: 1.5,
+        borderDash: [6, 4],
+        fill: false,
+        pointRadius: 0,
+        tension: 0.1
+      }
+    ]
+  },
+  options: {
+    scales: {
+      y: {
+        title: { display: true, text: 'p_3' },
+        min: Math.min(...p_3_fut) - (Math.max(0.15 * (Math.max(...p_3_fut) - Math.min(...p_3_fut)), 1e-6)),
+        max: Math.max(...p_3_fut) + (Math.max(0.15 * (Math.max(...p_3_fut) - Math.min(...p_3_fut)), 1e-6)),
+      },
+      x: {
+        title: { display: true, text: 't(days)' },
+        ticks: {
+          callback: function(value, index) {
+            return index % 4 === 0 ? this.getLabelForValue(value) : '';
+          },
+          maxRotation: 0,
+          minRotation: 0
+        }
+      }
+    },
+    plugins: {
+      legend: { display: true },
+      annotation: {
+        annotations: {
+          verticalLine: {
+            type: 'line',
+            xMin: tpredFirst,
+            xMax: tpredFirst,
+            borderColor: 'black',
+            borderWidth: 1,
+            borderDash: [6, 4]
+          }
+        }
+      }
+    }
+  }
+});
+
+// r_1 chart
+const ctxR1 = document.getElementById('r_1_chart').getContext('2d');
+const r1Chart = new Chart(ctxR1, {
+  type: 'line',
+  data: {
+    labels: timeFull,
+    datasets: [
+      {
+        label: 'Estimated r_1',
+        data: r_1,
+        borderColor: '#2E8B57',
+        backgroundColor: 'rgba(46, 139, 87, 0.2)',
+        borderWidth: 2,
+        fill: true,
+        pointRadius: 0,
+        tension: 0.1
+      },
+      {
+        label: 'SVM Regression',
+        data: r_1_fut,
+        borderColor: '#2E8B57',
+        borderWidth: 1.5,
+        borderDash: [6, 4],
+        fill: false,
+        pointRadius: 0,
+        tension: 0.1
+      }
+    ]
+  },
+  options: {
+    scales: {
+      y: {
+        title: { display: true, text: 'r_1' },
+        min: Math.min(...r_1_fut) - (Math.max(0.15 * (Math.max(...r_1_fut) - Math.min(...r_1_fut)), 1e-6)),
+        max: Math.max(...r_1_fut) + (Math.max(0.15 * (Math.max(...r_1_fut) - Math.min(...r_1_fut)), 1e-6)),
+      },
+      x: {
+        title: { display: true, text: 't(days)' },
+        ticks: {
+          callback: function(value, index) {
+            return index % 4 === 0 ? this.getLabelForValue(value) : '';
+          },
+          maxRotation: 0,
+          minRotation: 0
+        }
+      }
+    },
+    plugins: {
+      legend: { display: true },
+      annotation: {
+        annotations: {
+          verticalLine: {
+            type: 'line',
+            xMin: tpredFirst,
+            xMax: tpredFirst,
+            borderColor: 'black',
+            borderWidth: 1,
+            borderDash: [6, 4]
+          }
+        }
+      }
+    }
+  }
+});
+
+// r_2 chart
+const ctxR2 = document.getElementById('r_2_chart').getContext('2d');
+const r2Chart = new Chart(ctxR2, {
+  type: 'line',
+  data: {
+    labels: timeFull,
+    datasets: [
+      {
+        label: 'Estimated r_2',
+        data: r_2,
+        borderColor: '#66CDAA',
+        backgroundColor: 'rgba(102, 205, 170, 0.2)',
+        borderWidth: 2,
+        fill: true,
+        pointRadius: 0,
+        tension: 0.1
+      },
+      {
+        label: 'SVM Regression',
+        data: r_2_fut,
+        borderColor: '#66CDAA',
+        borderWidth: 1.5,
+        borderDash: [6, 4],
+        fill: false,
+        pointRadius: 0,
+        tension: 0.1
+      }
+    ]
+  },
+  options: {
+    scales: {
+      y: {
+        title: { display: true, text: 'r_2' },
+        min: Math.min(...r_2_fut) - (Math.max(0.15 * (Math.max(...r_2_fut) - Math.min(...r_2_fut)), 1e-6)),
+        max: Math.max(...r_2_fut) + (Math.max(0.15 * (Math.max(...r_2_fut) - Math.min(...r_2_fut)), 1e-6)),
+      },
+      x: {
+        title: { display: true, text: 't(days)' },
+        ticks: {
+          callback: function(value, index) {
+            return index % 4 === 0 ? this.getLabelForValue(value) : '';
+          },
+          maxRotation: 0,
+          minRotation: 0
+        }
+      }
+    },
+    plugins: {
+      legend: { display: true },
+      annotation: {
+        annotations: {
+          verticalLine: {
+            type: 'line',
+            xMin: tpredFirst,
+            xMax: tpredFirst,
+            borderColor: 'black',
+            borderWidth: 1,
+            borderDash: [6, 4]
+          }
+        }
+      }
+    }
+  }
+});
+
+// r_3 chart
+const ctxR3 = document.getElementById('r_3_chart').getContext('2d');
+const r3Chart = new Chart(ctxR3, {
+  type: 'line',
+  data: {
+    labels: timeFull,
+    datasets: [
+      {
+        label: 'Estimated r_3',
+        data: r_3,
+        borderColor: '#7FFF00',
+        backgroundColor: 'rgba(127, 255, 0, 0.2)',
+        borderWidth: 2,
+        fill: true,
+        pointRadius: 0,
+        tension: 0.1
+      },
+      {
+        label: 'SVM Regression',
+        data: r_3_fut,
+        borderColor: '#7FFF00',
+        borderWidth: 1.5,
+        borderDash: [6, 4],
+        fill: false,
+        pointRadius: 0,
+        tension: 0.1
+      }
+    ]
+  },
+  options: {
+    scales: {
+      y: {
+        title: { display: true, text: 'r_3' },
+        min: Math.min(...r_3_fut) - (Math.max(0.15 * (Math.max(...r_3_fut) - Math.min(...r_3_fut)), 1e-6)),
+        max: Math.max(...r_3_fut) + (Math.max(0.15 * (Math.max(...r_3_fut) - Math.min(...r_3_fut)), 1e-6)),
+      },
+      x: {
+        title: { display: true, text: 't(days)' },
+        ticks: {
+          callback: function(value, index) {
+            return index % 4 === 0 ? this.getLabelForValue(value) : '';
+          },
+          maxRotation: 0,
+          minRotation: 0
+        }
+      }
+    },
+    plugins: {
+      legend: { display: true },
+      annotation: {
+        annotations: {
+          verticalLine: {
+            type: 'line',
+            xMin: tpredFirst,
+            xMax: tpredFirst,
+            borderColor: 'black',
+            borderWidth: 1,
+            borderDash: [6, 4]
+          }
+        }
+      }
+    }
+  }
+});
+
+// d_1 chart
+const ctxD1 = document.getElementById('d_1_chart').getContext('2d');
+const d1Chart = new Chart(ctxD1, {
+  type: 'line',
+  data: {
+    labels: timeFull,
+    datasets: [
+      {
+        label: 'Estimated d_1',
+        data: d_1,
+        borderColor: '#FF6347', // Tomato
+        backgroundColor: 'rgba(255, 99, 71, 0.2)',
+        borderWidth: 2,
+        fill: true,
+        pointRadius: 0,
+        tension: 0.1
+      },
+      {
+        label: 'SVM Regression',
+        data: d_1_fut,
+        borderColor: '#FF6347',
+        borderWidth: 1.5,
+        borderDash: [6, 4],
+        fill: false,
+        pointRadius: 0,
+        tension: 0.1
+      }
+    ]
+  },
+  options: {
+    scales: {
+      y: {
+        title: { display: true, text: 'd_1' },
+        min: Math.min(...d_1_fut) - (Math.max(0.15 * (Math.max(...d_1_fut) - Math.min(...d_1_fut)), 1e-6)),
+        max: Math.max(...d_1_fut) + (Math.max(0.15 * (Math.max(...d_1_fut) - Math.min(...d_1_fut)), 1e-6)),
+      },
+      x: {
+        title: { display: true, text: 't(days)' },
+        ticks: {
+          callback: function(value, index) {
+            return index % 4 === 0 ? this.getLabelForValue(value) : '';
+          },
+          maxRotation: 0,
+          minRotation: 0
+        }
+      }
+    },
+    plugins: {
+      legend: { display: true },
+      annotation: {
+        annotations: {
+          verticalLine: {
+            type: 'line',
+            xMin: tpredFirst,
+            xMax: tpredFirst,
+            borderColor: 'black',
+            borderWidth: 1,
+            borderDash: [6, 4]
+          }
+        }
+      }
+    }
+  }
+});
+
+// d_2 chart
+const ctxD2 = document.getElementById('d_2_chart').getContext('2d');
+const d2Chart = new Chart(ctxD2, {
+  type: 'line',
+  data: {
+    labels: timeFull,
+    datasets: [
+      {
+        label: 'Estimated d_2',
+        data: d_2,
+        borderColor: '#CC5500', // OrangeRed
+        backgroundColor: 'rgba(204, 85, 0, 0.2)',
+        borderWidth: 2,
+        fill: true,
+        pointRadius: 0,
+        tension: 0.1
+      },
+      {
+        label: 'SVM Regression',
+        data: d_2_fut,
+        borderColor: '#CC5500',
+        borderWidth: 1.5,
+        borderDash: [6, 4],
+        fill: false,
+        pointRadius: 0,
+        tension: 0.1
+      }
+    ]
+  },
+  options: {
+    scales: {
+      y: {
+        title: { display: true, text: 'd_2' },
+        min: Math.min(...d_2_fut) - (Math.max(0.15 * (Math.max(...d_2_fut) - Math.min(...d_2_fut)), 1e-6)),
+        max: Math.max(...d_2_fut) + (Math.max(0.15 * (Math.max(...d_2_fut) - Math.min(...d_2_fut)), 1e-6)),
+      },
+      x: {
+        title: { display: true, text: 't(days)' },
+        ticks: {
+          callback: function(value, index) {
+            return index % 4 === 0 ? this.getLabelForValue(value) : '';
+          },
+          maxRotation: 0,
+          minRotation: 0
+        }
+      }
+    },
+    plugins: {
+      legend: { display: true },
+      annotation: {
+        annotations: {
+          verticalLine: {
+            type: 'line',
+            xMin: tpredFirst,
+            xMax: tpredFirst,
+            borderColor: 'black',
+            borderWidth: 1,
+            borderDash: [6, 4]
+          }
+        }
+      }
+    }
+  }
+});
+
+// d_3 chart
+const ctxD3 = document.getElementById('d_3_chart').getContext('2d');
+const d3Chart = new Chart(ctxD3, {
+  type: 'line',
+  data: {
+    labels: timeFull,
+    datasets: [
+      {
+        label: 'Estimated d_3',
+        data: d_3,
+        borderColor: '#DC143C', // Crimson
+        backgroundColor: 'rgba(220, 20, 60, 0.2)',
+        borderWidth: 2,
+        fill: true,
+        pointRadius: 0,
+        tension: 0.1
+      },
+      {
+        label: 'SVM Regression',
+        data: d_3_fut,
+        borderColor: '#DC143C',
+        borderWidth: 1.5,
+        borderDash: [6, 4],
+        fill: false,
+        pointRadius: 0,
+        tension: 0.1
+      }
+    ]
+  },
+  options: {
+    scales: {
+      y: {
+        title: { display: true, text: 'd_3' },
+        min: Math.min(...d_3_fut) - (Math.max(0.15 * (Math.max(...d_3_fut) - Math.min(...d_3_fut)), 1e-6)),
+        max: Math.max(...d_3_fut) + (Math.max(0.15 * (Math.max(...d_3_fut) - Math.min(...d_3_fut)), 1e-6)),
+      },
+      x: {
+        title: { display: true, text: 't(days)' },
+        ticks: {
+          callback: function(value, index) {
+            return index % 4 === 0 ? this.getLabelForValue(value) : '';
+          },
+          maxRotation: 0,
+          minRotation: 0
+        }
+      }
+    },
+    plugins: {
+      legend: { display: true },
+      annotation: {
+        annotations: {
+          verticalLine: {
+            type: 'line',
+            xMin: tpredFirst,
+            xMax: tpredFirst,
+            borderColor: 'black',
+            borderWidth: 1,
+            borderDash: [6, 4]
+          }
+        }
+      }
+    }
+  }
+});
+
+//Infected chart
+const ctxInf1 = document.getElementById('I1_chart').getContext('2d');
+
+const shift = I1model_50[I1model_50.length - 1] - I1data[I1data.length - 1];
+const adjustedModel = I1model_50.map(v => v - shift);
+
+const I1Chart = new Chart(ctxInf1, {
+  type: 'line',
+  data: {
+    labels: tdays.concat(tpred),
+    datasets: [
+      {
+        label: 'Infected Data',
+        data: tdays.map((t, i) => ({ x: t, y: I1data[i] })),
+        type: 'scatter',
+        backgroundColor: '#2EC4B6',
+        borderColor: '#2EC4B6',
+        pointStyle: 'rect',
+        pointRadius: (ctxInf1) => ctxInf1.dataIndex % 15 === 0 ? 4 : 0
+      },
+      {
+        label: 'Infected Sim',
+        data: tdays.map((t, i) => ({ x: t, y: adjustedModel[i] })),
+        borderColor: '#2EC4B6',
+        type: 'line',
+        borderWidth: 2,
+        fill: false,
+        pointRadius: 0,
+        tension: 0.1
+      },
+      {
+        label: 'Predicted Data',
+        data: tpred.map((t, i) => ({ x: t, y: I1data_pred[i] })),
+        type: 'scatter',
+        backgroundColor: '#3A86FF',
+        borderColor: '#3A86FF',
+        pointStyle: 'rect',
+        pointRadius: (ctxInf1) => ctxInf1.dataIndex % 15 === 0 ? 4 : 0
+      },
+      {
+        label: 'Predicted Infected Mean',
+        data: tpred.map((t, i) => ({ x: t, y: I1pred_50[i] })),
+        borderColor: '#3A86FF',
+        type: 'line',
+        borderWidth: 2,
+        fill: false,
+        pointRadius: 0,
+        tension: 0.1
+      },
+      {
+        label: '',
+        data: tpred.map((t, i) => ({ x: t, y: I1pred_75[i] })),
+        borderColor: 'transparent',
+        backgroundColor: 'rgba(58, 134, 255, 0.2)',
+        pointRadius: 0,
+        fill: false,
+        tension: 0.1
+      },
+      {
+        label: 'Prediction Infected (Q1-Q3%)',
+        data: tpred.map((t, i) => ({ x: t, y: I1pred_25[i] })),
+        borderColor: 'transparent',
+        backgroundColor: 'rgba(58, 134, 255, 0.2)',
+        pointRadius: 0,
+        fill: '-1',
+        tension: 0.1
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: 'top',
+        labels: {
+          filter: function(item) {
+            return item.text !== '';
+          }
+        }
+      }
+    },
+    scales: {
+      x: {
+        title: {
+          display: true,
+          text: 'Time (date)',},
+          ticks: {
+            callback: function(value, index) {
+              return index % 8 === 0 ? this.getLabelForValue(value) : '';
+            },
+            maxRotation: 0,
+            minRotation: 0
+          
+          
+        },
+        min: tdays[tdays.length - 200],
+        max: tpred[tpred.length - 1]
+        
+      },
+      y: {
+        title: {
+          display: true,
+          text: 'Infected Population',
+        }
+      }
+    }
+  }
+});
+
+//Hospitalized chart
+const ctxInf2 = document.getElementById('I2_chart').getContext('2d');
+
+const shift2 = I2model_50[I2model_50.length - 1] - I2data[I2data.length - 1];
+const adjustedModel2 = I2model_50.map(v => v - shift2);
+
+const I2Chart = new Chart(ctxInf2, {
+  type: 'line',
+  data: {
+    labels: tdays.concat(tpred),
+    datasets: [
+      {
+        label: 'Hospitalized Data',
+        data: tdays.map((t, i) => ({ x: t, y: I2data[i] })),
+        type: 'scatter',
+        backgroundColor: '#2EC4B6',
+        borderColor: '#2EC4B6',
+        pointStyle: 'rect',
+        pointRadius: (ctxInf2) => ctxInf2.dataIndex % 15 === 0 ? 4 : 0
+      },
+      {
+        label: 'Hospitalized Sim',
+        data: tdays.map((t, i) => ({ x: t, y: adjustedModel2[i] })),
+        borderColor: '#2EC4B6',
+        type: 'line',
+        borderWidth: 2,
+        fill: false,
+        pointRadius: 0,
+        tension: 0.1
+      },
+      {
+        label: 'Predicted Data',
+        data: tpred.map((t, i) => ({ x: t, y: I2data_pred[i] })),
+        type: 'scatter',
+        backgroundColor: '#3A86FF',
+        borderColor: '#3A86FF',
+        pointStyle: 'rect',
+        pointRadius: (ctxInf2) => ctxInf2.dataIndex % 15 === 0 ? 4 : 0
+      },
+      {
+        label: 'Predicted Hospitalized Mean',
+        data: tpred.map((t, i) => ({ x: t, y: I2pred_50[i] })),
+        borderColor: '#3A86FF',
+        type: 'line',
+        borderWidth: 2,
+        fill: false,
+        pointRadius: 0,
+        tension: 0.1
+      },
+      {
+        label: '',
+        data: tpred.map((t, i) => ({ x: t, y: I2pred_75[i] })),
+        borderColor: 'transparent',
+        backgroundColor: 'rgba(58, 134, 255, 0.2)',
+        pointRadius: 0,
+        fill: false,
+        tension: 0.1
+      },
+      {
+        label: 'Prediction Hospitalized (Q1-Q3%)',
+        data: tpred.map((t, i) => ({ x: t, y: I2pred_25[i] })),
+        borderColor: 'transparent',
+        backgroundColor: 'rgba(58, 134, 255, 0.2)',
+        pointRadius: 0,
+        fill: '-1',
+        tension: 0.1
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: 'top',
+        labels: {
+          filter: function(item) {
+            return item.text !== '';
+          }
+        }
+      }
+    },
+    scales: {
+      x: {
+        title: {
+          display: true,
+          text: 'Time (date)',},
+          ticks: {
+            callback: function(value, index) {
+              return index % 8 === 0 ? this.getLabelForValue(value) : '';
+            },
+            maxRotation: 0,
+            minRotation: 0
+          
+          
+        },
+        min: tdays[tdays.length - 200],
+        max: tpred[tpred.length - 1]
+        
+      },
+      y: {
+        title: {
+          display: true,
+          text: 'Hospitalized Population',
+        }
+      }
+    }
+  }
+
+  
+});
+
+//Hospitalized chart
+const ctxInf3 = document.getElementById('I3_chart').getContext('2d');
+
+const shift3 = I3model_50[I3model_50.length - 1] - I3data[I3data.length - 1];
+const adjustedModel3 = I3model_50.map(v => v - shift3);
+
+const I3Chart = new Chart(ctxInf3, {
+  type: 'line',
+  data: {
+    labels: tdays.concat(tpred),
+    datasets: [
+      {
+        label: 'Ventilated Data',
+        data: tdays.map((t, i) => ({ x: t, y: I3data[i] })),
+        type: 'scatter',
+        backgroundColor: '#2EC4B6',
+        borderColor: '#2EC4B6',
+        pointStyle: 'rect',
+        pointRadius: (ctxInf3) => ctxInf3.dataIndex % 15 === 0 ? 4 : 0
+      },
+      {
+        label: 'Ventilated Sim',
+        data: tdays.map((t, i) => ({ x: t, y: adjustedModel3[i] })),
+        borderColor: '#2EC4B6',
+        type: 'line',
+        borderWidth: 2,
+        fill: false,
+        pointRadius: 0,
+        tension: 0.1
+      },
+      {
+        label: 'Predicted Data',
+        data: tpred.map((t, i) => ({ x: t, y: I3data_pred[i] })),
+        type: 'scatter',
+        backgroundColor: '#3A86FF',
+        borderColor: '#3A86FF',
+        pointStyle: 'rect',
+        pointRadius: (ctxInf3) => ctxInf3.dataIndex % 15 === 0 ? 4 : 0
+      },
+      {
+        label: 'Predicted Ventilated Mean',
+        data: tpred.map((t, i) => ({ x: t, y: I3pred_50[i] })),
+        borderColor: '#3A86FF',
+        type: 'line',
+        borderWidth: 2,
+        fill: false,
+        pointRadius: 0,
+        tension: 0.1
+      },
+      {
+        label: '',
+        data: tpred.map((t, i) => ({ x: t, y: I3pred_75[i] })),
+        borderColor: 'transparent',
+        backgroundColor: 'rgba(58, 134, 255, 0.2)',
+        pointRadius: 0,
+        fill: false,
+        tension: 0.1
+      },
+      {
+        label: 'Prediction Ventilated (Q1-Q3%)',
+        data: tpred.map((t, i) => ({ x: t, y: I3pred_25[i] })),
+        borderColor: 'transparent',
+        backgroundColor: 'rgba(58, 134, 255, 0.2)',
+        pointRadius: 0,
+        fill: '-1',
+        tension: 0.1
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: 'top',
+        labels: {
+          filter: function(item) {
+            return item.text !== '';
+          }
+        }
+      }
+    },
+    scales: {
+      x: {
+        title: {
+          display: true,
+          text: 'Time (date)',},
+          ticks: {
+            callback: function(value, index) {
+              return index % 8 === 0 ? this.getLabelForValue(value) : '';
+            },
+            maxRotation: 0,
+            minRotation: 0
+          
+          
+        },
+        min: tdays[tdays.length - 200],
+        max: tpred[tpred.length - 1]
+        
+      },
+      y: {
+        title: {
+          display: true,
+          text: 'Ventilated Population',
+        }
+      }
+    }
+  }
+
+  
+});
+
+//Susceptible chart
+const ctxS = document.getElementById('S_chart').getContext('2d');
+
+const shift4 = Smodel_50[Smodel_50.length - 1] - Sdata[Sdata.length - 1];
+const adjustedModel4 = Smodel_50.map(v => v - shift4);
+
+const SChart = new Chart(ctxS, {
+  type: 'line',
+  data: {
+    labels: tdays.concat(tpred),
+    datasets: [
+      {
+        label: 'Susceptible Data',
+        data: tdays.map((t, i) => ({ x: t, y: Sdata[i] })),
+        type: 'scatter',
+        backgroundColor: '#2EC4B6',
+        borderColor: '#2EC4B6',
+        pointStyle: 'rect',
+        pointRadius: (ctxS) => ctxS.dataIndex % 15 === 0 ? 4 : 0
+      },
+      {
+        label: 'Susceptible Sim',
+        data: tdays.map((t, i) => ({ x: t, y: adjustedModel4[i] })),
+        borderColor: '#2EC4B6',
+        type: 'line',
+        borderWidth: 2,
+        fill: false,
+        pointRadius: 0,
+        tension: 0.1
+      },
+      {
+        label: 'Predicted Data',
+        data: tpred.map((t, i) => ({ x: t, y: Sdata_pred[i] })),
+        type: 'scatter',
+        backgroundColor: '#3A86FF',
+        borderColor: '#3A86FF',
+        pointStyle: 'rect',
+        pointRadius: (ctxS) => ctxS.dataIndex % 15 === 0 ? 4 : 0
+      },
+      {
+        label: 'Predicted Susceptible Mean',
+        data: tpred.map((t, i) => ({ x: t, y: Spred_50[i] })),
+        borderColor: '#3A86FF',
+        type: 'line',
+        borderWidth: 2,
+        fill: false,
+        pointRadius: 0,
+        tension: 0.1
+      },
+      {
+        label: '',
+        data: tpred.map((t, i) => ({ x: t, y: Spred_75[i] })),
+        borderColor: 'transparent',
+        backgroundColor: 'rgba(58, 134, 255, 0.2)',
+        pointRadius: 0,
+        fill: false,
+        tension: 0.1
+      },
+      {
+        label: 'Prediction Susceptible (Q1-Q3%)',
+        data: tpred.map((t, i) => ({ x: t, y: Spred_25[i] })),
+        borderColor: 'transparent',
+        backgroundColor: 'rgba(58, 134, 255, 0.2)',
+        pointRadius: 0,
+        fill: '-1',
+        tension: 0.1
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: 'top',
+        labels: {
+          filter: function(item) {
+            return item.text !== '';
+          }
+        }
+      }
+    },
+    scales: {
+      x: {
+        title: {
+          display: true,
+          text: 'Time (date)',},
+          ticks: {
+            callback: function(value, index) {
+              return index % 8 === 0 ? this.getLabelForValue(value) : '';
+            },
+            maxRotation: 0,
+            minRotation: 0
+          
+          
+        },
+        min: tdays[tdays.length - 200],
+        max: tpred[tpred.length - 1]
+        
+      },
+      y: {
+        title: {
+          display: true,
+          text: 'Susceptible Population',
+        }
+      }
+    }
+  }
+});
+//Recovered chart
+const ctxR = document.getElementById('R_chart').getContext('2d');
+
+const shift5 = Rmodel_50[Rmodel_50.length - 1] - Rdata[Rdata.length - 1];
+const adjustedModel5 = Rmodel_50.map(v => v - shift5);
+
+const RChart = new Chart(ctxR, {
+  type: 'line',
+  data: {
+    labels: tdays.concat(tpred),
+    datasets: [
+      {
+        label: 'Recovered Data',
+        data: tdays.map((t, i) => ({ x: t, y: Rdata[i] })),
+        type: 'scatter',
+        backgroundColor: '#2EC4B6',
+        borderColor: '#2EC4B6',
+        pointStyle: 'rect',
+        pointRadius: (ctxR) => ctxR.dataIndex % 15 === 0 ? 4 : 0
+      },
+      {
+        label: 'Recovered Sim',
+        data: tdays.map((t, i) => ({ x: t, y: adjustedModel5[i] })),
+        borderColor: '#2EC4B6',
+        type: 'line',
+        borderWidth: 2,
+        fill: false,
+        pointRadius: 0,
+        tension: 0.1
+      },
+      {
+        label: 'Predicted Data',
+        data: tpred.map((t, i) => ({ x: t, y: Rdata_pred[i] })),
+        type: 'scatter',
+        backgroundColor: '#3A86FF',
+        borderColor: '#3A86FF',
+        pointStyle: 'rect',
+        pointRadius: (ctxR) => ctxR.dataIndex % 15 === 0 ? 4 : 0
+      },
+      {
+        label: 'Predicted Recovered Mean',
+        data: tpred.map((t, i) => ({ x: t, y: Rpred_50[i] })),
+        borderColor: '#3A86FF',
+        type: 'line',
+        borderWidth: 2,
+        fill: false,
+        pointRadius: 0,
+        tension: 0.1
+      },
+      {
+        label: '',
+        data: tpred.map((t, i) => ({ x: t, y: Rpred_75[i] })),
+        borderColor: 'transparent',
+        backgroundColor: 'rgba(58, 134, 255, 0.2)',
+        pointRadius: 0,
+        fill: false,
+        tension: 0.1
+      },
+      {
+        label: 'Prediction Recovered (Q1-Q3%)',
+        data: tpred.map((t, i) => ({ x: t, y: Rpred_25[i] })),
+        borderColor: 'transparent',
+        backgroundColor: 'rgba(58, 134, 255, 0.2)',
+        pointRadius: 0,
+        fill: '-1',
+        tension: 0.1
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: 'top',
+        labels: {
+          filter: function(item) {
+            return item.text !== '';
+          }
+        }
+      }
+    },
+    scales: {
+      x: {
+        title: {
+          display: true,
+          text: 'Time (date)',},
+          ticks: {
+            callback: function(value, index) {
+              return index % 8 === 0 ? this.getLabelForValue(value) : '';
+            },
+            maxRotation: 0,
+            minRotation: 0
+          
+          
+        },
+        min: tdays[tdays.length - 200],
+        max: tpred[tpred.length - 1]
+        
+      },
+      y: {
+        title: {
+          display: true,
+          text: 'Recovered Population',
+        }
+      }
+    }
+  }
+
+  
+});
+//Death chart
+const ctxD = document.getElementById('D_chart').getContext('2d');
+
+const shift6 = Dmodel_50[Dmodel_50.length - 1] - Ddata[Ddata.length - 1];
+const adjustedModel6 = Dmodel_50.map(v => v - shift6);
+
+const DChart = new Chart(ctxD, {
+  type: 'line',
+  data: {
+    labels: tdays.concat(tpred),
+    datasets: [
+      {
+        label: 'Death Data',
+        data: tdays.map((t, i) => ({ x: t, y: Ddata[i] })),
+        type: 'scatter',
+        backgroundColor: '#2EC4B6',
+        borderColor: '#2EC4B6',
+        pointStyle: 'rect',
+        pointRadius: (ctxD) => ctxD.dataIndex % 15 === 0 ? 4 : 0
+      },
+      {
+        label: 'Death Sim',
+        data: tdays.map((t, i) => ({ x: t, y: adjustedModel6[i] })),
+        borderColor: '#2EC4B6',
+        type: 'line',
+        borderWidth: 2,
+        fill: false,
+        pointRadius: 0,
+        tension: 0.1
+      },
+      {
+        label: 'Predicted Data',
+        data: tpred.map((t, i) => ({ x: t, y: Ddata_pred[i] })),
+        type: 'scatter',
+        backgroundColor: '#3A86FF',
+        borderColor: '#3A86FF',
+        pointStyle: 'rect',
+        pointRadius: (ctxD) => ctxD.dataIndex % 15 === 0 ? 4 : 0
+      },
+      {
+        label: 'Predicted Death Mean',
+        data: tpred.map((t, i) => ({ x: t, y: Dpred_50[i] })),
+        borderColor: '#3A86FF',
+        type: 'line',
+        borderWidth: 2,
+        fill: false,
+        pointRadius: 0,
+        tension: 0.1
+      },
+      {
+        label: '',
+        data: tpred.map((t, i) => ({ x: t, y: Dpred_75[i] })),
+        borderColor: 'transparent',
+        backgroundColor: 'rgba(58, 134, 255, 0.2)',
+        pointRadius: 0,
+        fill: false,
+        tension: 0.1
+      },
+      {
+        label: 'Prediction Death (Q1-Q3%)',
+        data: tpred.map((t, i) => ({ x: t, y: Dpred_25[i] })),
+        borderColor: 'transparent',
+        backgroundColor: 'rgba(58, 134, 255, 0.2)',
+        pointRadius: 0,
+        fill: '-1',
+        tension: 0.1
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: 'top',
+        labels: {
+          filter: function(item) {
+            return item.text !== '';
+          }
+        }
+      }
+    },
+    scales: {
+      x: {
+        title: {
+          display: true,
+          text: 'Time (date)',},
+          ticks: {
+            callback: function(value, index) {
+              return index % 8 === 0 ? this.getLabelForValue(value) : '';
+            },
+            maxRotation: 0,
+            minRotation: 0
+          
+          
+        },
+        min: tdays[tdays.length - 200],
+        max: tpred[tpred.length - 1]
+        
+      },
+      y: {
+        title: {
+          display: true,
+          text: 'Death Population',
+        }
+      }
+    }
+  }
+});
+
+const groupLabels = ['t', 'S', 'I1', 'β1', 'β2', 'β3', 'r1', 'r2', 'r3', 'd1', 'd2', 'd3', 'p1', 'p2', 'p3'];
+
+const calculateBoxStats = (data) => {
+  const sorted = [...data].sort((a, b) => a - b);
+  const q1 = sorted[Math.floor(sorted.length * 0.25)];
+  const q3 = sorted[Math.floor(sorted.length * 0.75)];
+  const median = sorted[Math.floor(sorted.length * 0.5)];
+  const min = sorted[0];
+  const max = sorted[sorted.length - 1];
+  return { min, q1, median, q3, max };
+};
+
+const ctxBoxb1 = document.getElementById('box_beta_1').getContext('2d');
+const boxdatab1 = box_beta_1.map((groupData, i) => {
+  const { min, q1, median, q3, max } = calculateBoxStats(groupData);
+  return [
+    {
+      type: 'line',
+      label: groupLabels[i],
+      data: [
+        { x: i, y: min },
+        { x: i, y: max },
+      ],
+      borderColor: '#495057',
+      borderWidth: 1,
+      pointRadius: 0,
+    },
+    {
+      type: 'line',
+      data: [
+        { x: i - 0.2, y: q1 },
+        { x: i + 0.2, y: q1 },
+        { x: i + 0.2, y: q3 },
+        { x: i - 0.2, y: q3 },
+        { x: i - 0.2, y: q1 },
+      ],
+      backgroundColor: 'rgba(0,123,255,0.15)',
+      borderColor: '#007bff',
+      borderWidth: 0.7,
+      fill: true,
+      pointRadius: 0,
+    },
+    {
+      type: 'line',
+      data: [
+        { x: i - 0.2, y: median },
+        { x: i + 0.2, y: median },
+      ],
+      borderColor: '#343a40',
+      borderWidth: 1,
+      pointRadius: 0,
+    }
+  ];
+}).flat();
+
+new Chart(ctxBoxb1, {
+  data: {
+    datasets: boxdatab1
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      legend: { display: false },
+      title: {
+        display: true,
+        text: 'Permutation Importance',
+        font: { size: 18, weight: 'bold' },
+        color: '#343a40',
+        padding: { top: 10, bottom: 20 }
+      },
+    },
+    scales: {
+      x: {
+        type: 'linear',
+        ticks: {
+          callback: function (value, index) {
+            return groupLabels[value] || '';
+          },
+          stepSize: 1,
+        },
+        title: {
+          display: true,
+          text: 'Input Parameters'
+        }
+      },
+      y: {
+        title: {
+          display: true,
+          text: 'RMSE Delta'
+        }
+      }
+    }
+  }
+});
+
+const ctxBoxb2 = document.getElementById('box_beta_2').getContext('2d');
+const boxdatab2 = box_beta_2.map((groupDatab2, i) => {
+  const { min, q1, median, q3, max } = calculateBoxStats(groupDatab2);
+  return [
+    {
+      type: 'line',
+      label: groupLabels[i],
+      data: [
+        { x: i, y: min },
+        { x: i, y: max },
+      ],
+      borderColor: '#495057',
+      borderWidth: 1,
+      pointRadius: 0,
+    },
+    {
+      type: 'line',
+      data: [
+        { x: i - 0.2, y: q1 },
+        { x: i + 0.2, y: q1 },
+        { x: i + 0.2, y: q3 },
+        { x: i - 0.2, y: q3 },
+        { x: i - 0.2, y: q1 },
+      ],
+      backgroundColor: 'rgba(0,123,255,0.15)',
+      borderColor: '#007bff',
+      borderWidth: 0.7,
+      fill: true,
+      pointRadius: 0,
+    },
+    {
+      type: 'line',
+      data: [
+        { x: i - 0.2, y: median },
+        { x: i + 0.2, y: median },
+      ],
+      borderColor: '#343a40',
+      borderWidth: 1,
+      pointRadius: 0,
+    }
+  ];
+}).flat();
+
+new Chart(ctxBoxb2, {
+  data: {
+    datasets: boxdatab2
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      legend: { display: false },
+      title: {
+        display: true,
+        text: 'Permutation Importance',
+        font: { size: 18, weight: 'bold' },
+        color: '#343a40',
+        padding: { top: 10, bottom: 20 }
+      },
+    },
+    scales: {
+      x: {
+        type: 'linear',
+        ticks: {
+          callback: function (value, index) {
+            return groupLabels[value] || '';
+          },
+          stepSize: 1,
+        },
+        title: {
+          display: true,
+          text: 'Input Parameters'
+        }
+      },
+      y: {
+        title: {
+          display: true,
+          text: 'RMSE Delta'
+        }
+      }
+    }
+  }
+});
+
+const ctxBoxb3 = document.getElementById('box_beta_3').getContext('2d');
+const boxdatab3 = box_beta_3.map((groupDatab3, i) => {
+  const { min, q1, median, q3, max } = calculateBoxStats(groupDatab3);
+  return [
+    {
+      type: 'line',
+      label: groupLabels[i],
+      data: [
+        { x: i, y: min },
+        { x: i, y: max },
+      ],
+      borderColor: '#495057',
+      borderWidth: 1,
+      pointRadius: 0,
+    },
+    {
+      type: 'line',
+      data: [
+        { x: i - 0.2, y: q1 },
+        { x: i + 0.2, y: q1 },
+        { x: i + 0.2, y: q3 },
+        { x: i - 0.2, y: q3 },
+        { x: i - 0.2, y: q1 },
+      ],
+      backgroundColor: 'rgba(0,123,255,0.15)',
+      borderColor: '#007bff',
+      borderWidth: 0.7,
+      fill: true,
+      pointRadius: 0,
+    },
+    {
+      type: 'line',
+      data: [
+        { x: i - 0.2, y: median },
+        { x: i + 0.2, y: median },
+      ],
+      borderColor: '#343a40',
+      borderWidth: 1,
+      pointRadius: 0,
+    }
+  ];
+}).flat();
+
+new Chart(ctxBoxb3, {
+  data: {
+    datasets: boxdatab3
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      legend: { display: false },
+      title: {
+        display: true,
+        text: 'Permutation Importance',
+        font: { size: 18, weight: 'bold' },
+        color: '#343a40',
+        padding: { top: 10, bottom: 20 }
+      },
+    },
+    scales: {
+      x: {
+        type: 'linear',
+        ticks: {
+          callback: function (value, index) {
+            return groupLabels[value] || '';
+          },
+          stepSize: 1,
+        },
+        title: {
+          display: true,
+          text: 'Input Parameters'
+        }
+      },
+      y: {
+        title: {
+          display: true,
+          text: 'RMSE Delta'
+        }
+      }
+    }
+  }
+});
+
+const ctxBoxr1 = document.getElementById('box_r_1').getContext('2d');
+const boxdatar1 = box_r_1.map((groupDatar1, i) => {
+  const { min, q1, median, q3, max } = calculateBoxStats(groupDatar1);
+  return [
+    {
+      type: 'line',
+      label: groupLabels[i],
+      data: [
+        { x: i, y: min },
+        { x: i, y: max },
+      ],
+      borderColor: '#495057',
+      borderWidth: 1,
+      pointRadius: 0,
+    },
+    {
+      type: 'line',
+      data: [
+        { x: i - 0.2, y: q1 },
+        { x: i + 0.2, y: q1 },
+        { x: i + 0.2, y: q3 },
+        { x: i - 0.2, y: q3 },
+        { x: i - 0.2, y: q1 },
+      ],
+      backgroundColor: 'rgba(0,123,255,0.15)',
+      borderColor: '#007bff',
+      borderWidth: 0.7,
+      fill: true,
+      pointRadius: 0,
+    },
+    {
+      type: 'line',
+      data: [
+        { x: i - 0.2, y: median },
+        { x: i + 0.2, y: median },
+      ],
+      borderColor: '#343a40',
+      borderWidth: 1,
+      pointRadius: 0,
+    }
+  ];
+}).flat();
+
+new Chart(ctxBoxr1, {
+  data: {
+    datasets: boxdatar1
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      legend: { display: false },
+      title: {
+        display: true,
+        text: 'Permutation Importance',
+        font: { size: 18, weight: 'bold' },
+        color: '#343a40',
+        padding: { top: 10, bottom: 20 }
+      },
+    },
+    scales: {
+      x: {
+        type: 'linear',
+        ticks: {
+          callback: function (value, index) {
+            return groupLabels[value] || '';
+          },
+          stepSize: 1,
+        },
+        title: {
+          display: true,
+          text: 'Input Parameters'
+        }
+      },
+      y: {
+        title: {
+          display: true,
+          text: 'RMSE Delta'
+        }
+      }
+    }
+  }
+});
+
+const ctxBoxr2 = document.getElementById('box_r_2').getContext('2d');
+const boxdatar2 = box_r_2.map((groupDatar2, i) => {
+  const { min, q1, median, q3, max } = calculateBoxStats(groupDatar2);
+  return [
+    {
+      type: 'line',
+      label: groupLabels[i],
+      data: [
+        { x: i, y: min },
+        { x: i, y: max },
+      ],
+      borderColor: '#495057',
+      borderWidth: 1,
+      pointRadius: 0,
+    },
+    {
+      type: 'line',
+      data: [
+        { x: i - 0.2, y: q1 },
+        { x: i + 0.2, y: q1 },
+        { x: i + 0.2, y: q3 },
+        { x: i - 0.2, y: q3 },
+        { x: i - 0.2, y: q1 },
+      ],
+      backgroundColor: 'rgba(0,123,255,0.15)',
+      borderColor: '#007bff',
+      borderWidth: 0.7,
+      fill: true,
+      pointRadius: 0,
+    },
+    {
+      type: 'line',
+      data: [
+        { x: i - 0.2, y: median },
+        { x: i + 0.2, y: median },
+      ],
+      borderColor: '#343a40',
+      borderWidth: 1,
+      pointRadius: 0,
+    }
+  ];
+}).flat();
+
+new Chart(ctxBoxr2, {
+  data: {
+    datasets: boxdatar2
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      legend: { display: false },
+      title: {
+        display: true,
+        text: 'Permutation Importance',
+        font: { size: 18, weight: 'bold' },
+        color: '#343a40',
+        padding: { top: 10, bottom: 20 }
+      },
+    },
+    scales: {
+      x: {
+        type: 'linear',
+        ticks: {
+          callback: function (value, index) {
+            return groupLabels[value] || '';
+          },
+          stepSize: 1,
+        },
+        title: {
+          display: true,
+          text: 'Input Parameters'
+        }
+      },
+      y: {
+        title: {
+          display: true,
+          text: 'RMSE Delta'
+        }
+      }
+    }
+  }
+});
+
+const ctxBoxr3 = document.getElementById('box_r_3').getContext('2d');
+const boxdatar3 = box_r_3.map((groupDatar3, i) => {
+  const { min, q1, median, q3, max } = calculateBoxStats(groupDatar3);
+  return [
+    {
+      type: 'line',
+      label: groupLabels[i],
+      data: [
+        { x: i, y: min },
+        { x: i, y: max },
+      ],
+      borderColor: '#495057',
+      borderWidth: 1,
+      pointRadius: 0,
+    },
+    {
+      type: 'line',
+      data: [
+        { x: i - 0.2, y: q1 },
+        { x: i + 0.2, y: q1 },
+        { x: i + 0.2, y: q3 },
+        { x: i - 0.2, y: q3 },
+        { x: i - 0.2, y: q1 },
+      ],
+      backgroundColor: 'rgba(0,123,255,0.15)',
+      borderColor: '#007bff',
+      borderWidth: 0.7,
+      fill: true,
+      pointRadius: 0,
+    },
+    {
+      type: 'line',
+      data: [
+        { x: i - 0.2, y: median },
+        { x: i + 0.2, y: median },
+      ],
+      borderColor: '#343a40',
+      borderWidth: 1,
+      pointRadius: 0,
+    }
+  ];
+}).flat();
+
+new Chart(ctxBoxr3, {
+  data: {
+    datasets: boxdatar3
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      legend: { display: false },
+      title: {
+        display: true,
+        text: 'Permutation Importance',
+        font: { size: 18, weight: 'bold' },
+        color: '#343a40',
+        padding: { top: 10, bottom: 20 }
+      },
+    },
+    scales: {
+      x: {
+        type: 'linear',
+        ticks: {
+          callback: function (value, index) {
+            return groupLabels[value] || '';
+          },
+          stepSize: 1,
+        },
+        title: {
+          display: true,
+          text: 'Input Parameters'
+        }
+      },
+      y: {
+        title: {
+          display: true,
+          text: 'RMSE Delta'
+        }
+      }
+    }
+  }
+});
+
+const ctxBoxd1 = document.getElementById('box_d_1').getContext('2d');
+const boxdatad1 = box_d_1.map((groupDatad1, i) => {
+  const { min, q1, median, q3, max } = calculateBoxStats(groupDatad1);
+  return [
+    {
+      type: 'line',
+      label: groupLabels[i],
+      data: [
+        { x: i, y: min },
+        { x: i, y: max },
+      ],
+      borderColor: '#495057',
+      borderWidth: 1,
+      pointRadius: 0,
+    },
+    {
+      type: 'line',
+      data: [
+        { x: i - 0.2, y: q1 },
+        { x: i + 0.2, y: q1 },
+        { x: i + 0.2, y: q3 },
+        { x: i - 0.2, y: q3 },
+        { x: i - 0.2, y: q1 },
+      ],
+      backgroundColor: 'rgba(0,123,255,0.15)',
+      borderColor: '#007bff',
+      borderWidth: 0.7,
+      fill: true,
+      pointRadius: 0,
+    },
+    {
+      type: 'line',
+      data: [
+        { x: i - 0.2, y: median },
+        { x: i + 0.2, y: median },
+      ],
+      borderColor: '#343a40',
+      borderWidth: 1,
+      pointRadius: 0,
+    }
+  ];
+}).flat();
+
+new Chart(ctxBoxd1, {
+  data: {
+    datasets: boxdatad1
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      legend: { display: false },
+      title: {
+        display: true,
+        text: 'Permutation Importance',
+        font: { size: 18, weight: 'bold' },
+        color: '#343a40',
+        padding: { top: 10, bottom: 20 }
+      },
+    },
+    scales: {
+      x: {
+        type: 'linear',
+        ticks: {
+          callback: function (value, index) {
+            return groupLabels[value] || '';
+          },
+          stepSize: 1,
+        },
+        title: {
+          display: true,
+          text: 'Input Parameters'
+        }
+      },
+      y: {
+        title: {
+          display: true,
+          text: 'RMSE Delta'
+        }
+      }
+    }
+  }
+});
+
+const ctxBoxd2 = document.getElementById('box_d_2').getContext('2d');
+const boxdatad2 = box_d_2.map((groupDatad2, i) => {
+  const { min, q1, median, q3, max } = calculateBoxStats(groupDatad2);
+  return [
+    {
+      type: 'line',
+      label: groupLabels[i],
+      data: [
+        { x: i, y: min },
+        { x: i, y: max },
+      ],
+      borderColor: '#495057',
+      borderWidth: 1,
+      pointRadius: 0,
+    },
+    {
+      type: 'line',
+      data: [
+        { x: i - 0.2, y: q1 },
+        { x: i + 0.2, y: q1 },
+        { x: i + 0.2, y: q3 },
+        { x: i - 0.2, y: q3 },
+        { x: i - 0.2, y: q1 },
+      ],
+      backgroundColor: 'rgba(0,123,255,0.15)',
+      borderColor: '#007bff',
+      borderWidth: 0.7,
+      fill: true,
+      pointRadius: 0,
+    },
+    {
+      type: 'line',
+      data: [
+        { x: i - 0.2, y: median },
+        { x: i + 0.2, y: median },
+      ],
+      borderColor: '#343a40',
+      borderWidth: 1,
+      pointRadius: 0,
+    }
+  ];
+}).flat();
+
+new Chart(ctxBoxd2, {
+  data: {
+    datasets: boxdatad2
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      legend: { display: false },
+      title: {
+        display: true,
+        text: 'Permutation Importance',
+        font: { size: 18, weight: 'bold' },
+        color: '#343a40',
+        padding: { top: 10, bottom: 20 }
+      },
+    },
+    scales: {
+      x: {
+        type: 'linear',
+        ticks: {
+          callback: function (value, index) {
+            return groupLabels[value] || '';
+          },
+          stepSize: 1,
+        },
+        title: {
+          display: true,
+          text: 'Input Parameters'
+        }
+      },
+      y: {
+        title: {
+          display: true,
+          text: 'RMSE Delta'
+        }
+      }
+    }
+  }
+});
+const ctxBoxd3 = document.getElementById('box_d_3').getContext('2d');
+const boxdatad3 = box_d_3.map((groupDatad3, i) => {
+  const { min, q1, median, q3, max } = calculateBoxStats(groupDatad3);
+  return [
+    {
+      type: 'line',
+      label: groupLabels[i],
+      data: [
+        { x: i, y: min },
+        { x: i, y: max },
+      ],
+      borderColor: '#495057',
+      borderWidth: 1,
+      pointRadius: 0,
+    },
+    {
+      type: 'line',
+      data: [
+        { x: i - 0.2, y: q1 },
+        { x: i + 0.2, y: q1 },
+        { x: i + 0.2, y: q3 },
+        { x: i - 0.2, y: q3 },
+        { x: i - 0.2, y: q1 },
+      ],
+      backgroundColor: 'rgba(0,123,255,0.15)',
+      borderColor: '#007bff',
+      borderWidth: 0.7,
+      fill: true,
+      pointRadius: 0,
+    },
+    {
+      type: 'line',
+      data: [
+        { x: i - 0.2, y: median },
+        { x: i + 0.2, y: median },
+      ],
+      borderColor: '#343a40',
+      borderWidth: 1,
+      pointRadius: 0,
+    }
+  ];
+}).flat();
+
+new Chart(ctxBoxd3, {
+  data: {
+    datasets: boxdatad3
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      legend: { display: false },
+      title: {
+        display: true,
+        text: 'Permutation Importance',
+        font: { size: 18, weight: 'bold' },
+        color: '#343a40',
+        padding: { top: 10, bottom: 20 }
+      },
+    },
+    scales: {
+      x: {
+        type: 'linear',
+        ticks: {
+          callback: function (value, index) {
+            return groupLabels[value] || '';
+          },
+          stepSize: 1,
+        },
+        title: {
+          display: true,
+          text: 'Input Parameters'
+        }
+      },
+      y: {
+        title: {
+          display: true,
+          text: 'RMSE Delta'
+        }
+      }
+    }
+  }
+});
+const ctxBoxp1 = document.getElementById('box_p_1').getContext('2d');
+const boxdatap1 = box_p_1.map((groupDatap1, i) => {
+  const { min, q1, median, q3, max } = calculateBoxStats(groupDatap1);
+  return [
+    {
+      type: 'line',
+      label: groupLabels[i],
+      data: [
+        { x: i, y: min },
+        { x: i, y: max },
+      ],
+      borderColor: '#495057',
+      borderWidth: 1,
+      pointRadius: 0,
+    },
+    {
+      type: 'line',
+      data: [
+        { x: i - 0.2, y: q1 },
+        { x: i + 0.2, y: q1 },
+        { x: i + 0.2, y: q3 },
+        { x: i - 0.2, y: q3 },
+        { x: i - 0.2, y: q1 },
+      ],
+      backgroundColor: 'rgba(0,123,255,0.15)',
+      borderColor: '#007bff',
+      borderWidth: 0.7,
+      fill: true,
+      pointRadius: 0,
+    },
+    {
+      type: 'line',
+      data: [
+        { x: i - 0.2, y: median },
+        { x: i + 0.2, y: median },
+      ],
+      borderColor: '#343a40',
+      borderWidth: 1,
+      pointRadius: 0,
+    }
+  ];
+}).flat();
+
+new Chart(ctxBoxp1, {
+  data: {
+    datasets: boxdatap1
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      legend: { display: false },
+      title: {
+        display: true,
+        text: 'Permutation Importance',
+        font: { size: 18, weight: 'bold' },
+        color: '#343a40',
+        padding: { top: 10, bottom: 20 }
+      },
+    },
+    scales: {
+      x: {
+        type: 'linear',
+        ticks: {
+          callback: function (value, index) {
+            return groupLabels[value] || '';
+          },
+          stepSize: 1,
+        },
+        title: {
+          display: true,
+          text: 'Input Parameters'
+        }
+      },
+      y: {
+        title: {
+          display: true,
+          text: 'RMSE Delta'
+        }
+      }
+    }
+  }
+});
+
+const ctxBoxp2 = document.getElementById('box_p_2').getContext('2d');
+const boxdatap2 = box_p_2.map((groupDatap2, i) => {
+  const { min, q1, median, q3, max } = calculateBoxStats(groupDatap2);
+  return [
+    {
+      type: 'line',
+      label: groupLabels[i],
+      data: [
+        { x: i, y: min },
+        { x: i, y: max },
+      ],
+      borderColor: '#495057',
+      borderWidth: 1,
+      pointRadius: 0,
+    },
+    {
+      type: 'line',
+      data: [
+        { x: i - 0.2, y: q1 },
+        { x: i + 0.2, y: q1 },
+        { x: i + 0.2, y: q3 },
+        { x: i - 0.2, y: q3 },
+        { x: i - 0.2, y: q1 },
+      ],
+      backgroundColor: 'rgba(0,123,255,0.15)',
+      borderColor: '#007bff',
+      borderWidth: 0.7,
+      fill: true,
+      pointRadius: 0,
+    },
+    {
+      type: 'line',
+      data: [
+        { x: i - 0.2, y: median },
+        { x: i + 0.2, y: median },
+      ],
+      borderColor: '#343a40',
+      borderWidth: 1,
+      pointRadius: 0,
+    }
+  ];
+}).flat();
+
+new Chart(ctxBoxp2, {
+  data: {
+    datasets: boxdatap2
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      legend: { display: false },
+      title: {
+        display: true,
+        text: 'Permutation Importance',
+        font: { size: 18, weight: 'bold' },
+        color: '#343a40',
+        padding: { top: 10, bottom: 20 }
+      },
+    },
+    scales: {
+      x: {
+        type: 'linear',
+        ticks: {
+          callback: function (value, index) {
+            return groupLabels[value] || '';
+          },
+          stepSize: 1,
+        },
+        title: {
+          display: true,
+          text: 'Input Parameters'
+        }
+      },
+      y: {
+        title: {
+          display: true,
+          text: 'RMSE Delta'
+        }
+      }
+    }
+  }
+});
+const ctxBoxp3 = document.getElementById('box_p_3').getContext('2d');
+const boxdatap3 = box_p_3.map((groupDatap3, i) => {
+  const { min, q1, median, q3, max } = calculateBoxStats(groupDatap3);
+  return [
+    {
+      type: 'line',
+      label: groupLabels[i],
+      data: [
+        { x: i, y: min },
+        { x: i, y: max },
+      ],
+      borderColor: '#495057',
+      borderWidth: 1,
+      pointRadius: 0,
+    },
+    {
+      type: 'line',
+      data: [
+        { x: i - 0.2, y: q1 },
+        { x: i + 0.2, y: q1 },
+        { x: i + 0.2, y: q3 },
+        { x: i - 0.2, y: q3 },
+        { x: i - 0.2, y: q1 },
+      ],
+      backgroundColor: 'rgba(0,123,255,0.15)',
+      borderColor: '#007bff',
+      borderWidth: 0.7,
+      fill: true,
+      pointRadius: 0,
+    },
+    {
+      type: 'line',
+      data: [
+        { x: i - 0.2, y: median },
+        { x: i + 0.2, y: median },
+      ],
+      borderColor: '#343a40',
+      borderWidth: 1,
+      pointRadius: 0,
+    }
+  ];
+}).flat();
+
+new Chart(ctxBoxp3, {
+  data: {
+    datasets: boxdatap3
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      legend: { display: false },
+      title: {
+        display: true,
+        text: 'Permutation Importance',
+        font: { size: 18, weight: 'bold' },
+        color: '#343a40',
+        padding: { top: 10, bottom: 20 }
+      },
+    },
+    scales: {
+      x: {
+        type: 'linear',
+        ticks: {
+          callback: function (value, index) {
+            return groupLabels[value] || '';
+          },
+          stepSize: 1,
+        },
+        title: {
+          display: true,
+          text: 'Input Parameters'
+        }
+      },
+      y: {
+        title: {
+          display: true,
+          text: 'RMSE Delta'
+        }
+      }
+    }
+  }
+});
+
+});
+</script>
+
+<body>
+  <div class="container-fluid dashboard-container">
+    <h1>Support Vector Machine Regression</h1>
+    
+    <!-- Beta₁ Info Section --> 
+    <div class="row gx-3 align-items-stretch mb-2">
+      <div class="col-lg-7 col-12 mb-3 mb-lg-0">
+        <canvas id="beta_1_chart" class="w-100" height="300"></canvas>
+      </div>
+      <div class="col-lg-2 col-12 mb-3 mb-lg-0">
+        <div class="info-card p-3 h-100 d-flex flex-column justify-content-between">
+          <h6 class="mb-2">Beta₁ Info</h6>
+          <div id="beta1-stats"></div>
+        </div>
+      </div>
+      <div class="col-lg-3 col-12">
+        <canvas id="box_beta_1" class="w-100" height="300"></canvas>
+      </div>
+    </div>
+    
+  
+    <!-- Beta₂ Info Section -->
+    <div class="row gx-3 align-items-stretch mb-2">
+      <div class="col-lg-7 col-12 mb-3 mb-lg-0">
+        <canvas id="beta_2_chart" class="w-100" height="300"></canvas>
+      </div>
+      <div class="col-lg-2 col-12 mb-3 mb-lg-0">
+        <div class="info-card p-3 h-100 d-flex flex-column justify-content-between">
+          <h6 class="mb-2">Beta₂ Info</h6>
+          <div id="beta2-stats"></div>
+        </div>
+      </div>
+      <div class="col-lg-3 col-12">
+        <canvas id="box_beta_2" class="w-100" height="300"></canvas>
+      </div>
+    </div>
+  
+    <!-- Beta₃ Info Section -->
+    <div class="row gx-3 align-items-stretch mb-2">
+      <div class="col-lg-7 col-12 mb-3 mb-lg-0">
+        <canvas id="beta_3_chart" class="w-100" height="300"></canvas>
+      </div>
+      <div class="col-lg-2 col-12 mb-3 mb-lg-0">
+        <div class="info-card p-3 h-100 d-flex flex-column justify-content-between">
+          <h6 class="mb-2">Beta₃ Info</h6>
+          <div id="beta3-stats"></div>
+        </div>
+      </div>
+      <div class="col-lg-3 col-12">
+        <canvas id="box_beta_3" class="w-100" height="300"></canvas>
+      </div>
+    </div>
+
+    <!-- r₁ Info Section -->
+    <div class="row gx-3 align-items-stretch mb-2">
+      <div class="col-lg-7 col-12 mb-3 mb-lg-0">
+        <canvas id="r_1_chart" class="w-100" height="300"></canvas>
+      </div>
+      <div class="col-lg-2 col-12 mb-3 mb-lg-0">
+        <div class="info-card p-3 h-100 d-flex flex-column justify-content-between">
+          <h6 class="mb-2">r₁ Info</h6>
+          <div id="r1-stats"></div>
+        </div>
+      </div>
+      <div class="col-lg-3 col-12">
+        <canvas id="box_r_1" class="w-100" height="300"></canvas>
+      </div>
+    </div>
+
+    <!-- r₂ Info Section -->
+    <div class="row gx-3 align-items-stretch mb-2">
+      <div class="col-lg-7 col-12 mb-3 mb-lg-0">
+        <canvas id="r_2_chart" class="w-100" height="300"></canvas>
+      </div>
+      <div class="col-lg-2 col-12 mb-3 mb-lg-0">
+        <div class="info-card p-3 h-100 d-flex flex-column justify-content-between">
+          <h6 class="mb-2">r₂ Info</h6>
+          <div id="r2-stats"></div>
+        </div>
+      </div>
+      <div class="col-lg-3 col-12">
+        <canvas id="box_r_2" class="w-100" height="300"></canvas>
+      </div>
+    </div>
+  
+    <!-- r₃ Info Section -->
+    <div class="row gx-3 align-items-stretch mb-2">
+      <div class="col-lg-7 col-12 mb-3 mb-lg-0">
+        <canvas id="r_3_chart" class="w-100" height="300"></canvas>
+      </div>
+      <div class="col-lg-2 col-12 mb-3 mb-lg-0">
+        <div class="info-card p-3 h-100 d-flex flex-column justify-content-between">
+          <h6 class="mb-2">r₃ Info</h6>
+          <div id="r3-stats"></div>
+        </div>
+      </div>
+      <div class="col-lg-3 col-12">
+        <canvas id="box_r_3" class="w-100" height="300"></canvas>
+      </div>
+    </div>
+
+    <!-- d₁ Info Section -->
+    <div class="row gx-3 align-items-stretch mb-2">
+      <div class="col-lg-7 col-12 mb-3 mb-lg-0">
+        <canvas id="d_1_chart" class="w-100" height="300"></canvas>
+      </div>
+      <div class="col-lg-2 col-12 mb-3 mb-lg-0">
+        <div class="info-card p-3 h-100 d-flex flex-column justify-content-between">
+          <h6 class="mb-2">d₁ Info</h6>
+          <div id="d1-stats"></div>
+        </div>
+      </div>
+      <div class="col-lg-3 col-12">
+        <canvas id="box_d_1" class="w-100" height="300"></canvas>
+      </div>
+    </div>
+  
+    <!-- d₂ Info Section -->
+    <div class="row gx-3 align-items-stretch mb-2">
+      <div class="col-lg-7 col-12 mb-3 mb-lg-0">
+        <canvas id="d_2_chart" class="w-100" height="300"></canvas>
+      </div>
+      <div class="col-lg-2 col-12 mb-3 mb-lg-0">
+        <div class="info-card p-3 h-100 d-flex flex-column justify-content-between">
+          <h6 class="mb-2">d₂ Info</h6>
+          <div id="d2-stats"></div>
+        </div>
+      </div>
+      <div class="col-lg-3 col-12">
+        <canvas id="box_d_2" class="w-100" height="300"></canvas>
+      </div>
+    </div>
+  
+    <!-- d₃ Info Section -->
+    <div class="row gx-3 align-items-stretch mb-2">
+      <div class="col-lg-7 col-12 mb-3 mb-lg-0">
+        <canvas id="d_3_chart" class="w-100" height="300"></canvas>
+      </div>
+      <div class="col-lg-2 col-12 mb-3 mb-lg-0">
+        <div class="info-card p-3 h-100 d-flex flex-column justify-content-between">
+          <h6 class="mb-2">d₃ Info</h6>
+          <div id="d3-stats"></div>
+        </div>
+      </div>
+      <div class="col-lg-3 col-12">
+        <canvas id="box_d_3" class="w-100" height="300"></canvas>
+      </div>
+    </div>
+  
+    <!-- p₁ Info Section -->
+    <div class="row gx-3 align-items-stretch mb-2">
+      <div class="col-lg-7 col-12 mb-3 mb-lg-0">
+        <canvas id="p_1_chart" class="w-100" height="300"></canvas>
+      </div>
+      <div class="col-lg-2 col-12 mb-3 mb-lg-0">
+        <div class="info-card p-3 h-100 d-flex flex-column justify-content-between">
+          <h6 class="mb-2">p₁ Info</h6>
+          <div id="p1-stats"></div>
+        </div>
+      </div>
+      <div class="col-lg-3 col-12">
+        <canvas id="box_p_1" class="w-100" height="300"></canvas>
+      </div>
+    </div>
+  
+    <!-- p₂ Info Section -->
+    <div class="row gx-3 align-items-stretch mb-2">
+      <div class="col-lg-7 col-12 mb-3 mb-lg-0">
+        <canvas id="p_2_chart" class="w-100" height="300"></canvas>
+      </div>
+      <div class="col-lg-2 col-12 mb-3 mb-lg-0">
+        <div class="info-card p-3 h-100 d-flex flex-column justify-content-between">
+          <h6 class="mb-2">p₂ Info</h6>
+          <div id="p2-stats"></div>
+        </div>
+      </div>
+      <div class="col-lg-3 col-12">
+        <canvas id="box_p_2" class="w-100" height="300"></canvas>
+      </div>
+    </div>
+  
+    <!-- p₃ Info Section -->
+    <div class="row gx-3 align-items-stretch mb-2">
+      <div class="col-lg-7 col-12 mb-3 mb-lg-0">
+        <canvas id="p_3_chart" class="w-100" height="300"></canvas>
+      </div>
+      <div class="col-lg-2 col-12 mb-3 mb-lg-0">
+        <div class="info-card p-3 h-100 d-flex flex-column justify-content-between">
+          <h6 class="mb-2">p₃ Info</h6>
+          <div id="p3-stats"></div>
+        </div>
+      </div>
+      <div class="col-lg-3 col-12">
+        <canvas id="box_p_3" class="w-100" height="300"></canvas>
+      </div>
+    </div>
+    <h1 style="margin-top: 40px;">Compartmental Population Simulation</h1>
+    <div class="row mb-4">
+      <div class="col-12">
+        <canvas id="S_chart" class="w-100 mb-2" style="height: 350px;"></canvas>
+        <canvas id="I1_chart" class="w-100 mb-2" style="height: 350px;"></canvas>
+        <canvas id="I2_chart" class="w-100 mb-2" style="height: 350px;"></canvas>
+        <canvas id="I3_chart" class="w-100 mb-2" style="height: 350px;"></canvas>
+        <canvas id="R_chart" class="w-100 mb-2" style="height: 350px;"></canvas>
+        <canvas id="D_chart" class="w-100 mb-2" style="height: 350px;"></canvas>
+      </div>
+    </div>
+  </div>
+      </body>
+</html>
